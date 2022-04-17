@@ -25,6 +25,11 @@ func main() {
 	app.Action = run
 	app.Version = version
 	app.Flags = []cli.Flag{
+		cli.BoolFlag{
+			Name:   "debug",
+			Usage:  "debug mode",
+			EnvVar: "PLUGIN_DEBUG",
+		},
 		cli.IntFlag{
 			Name:   "level",
 			Usage:  "level",
@@ -58,6 +63,7 @@ func run(c *cli.Context) error {
 		Path:    c.String("path"),
 		Include: c.String("include"),
 		Exclude: c.String("exclude"),
+		Debug:   c.Bool("debug"),
 	}
 
 	if err := plugin.Exec(); err != nil {

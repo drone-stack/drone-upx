@@ -4,17 +4,14 @@
 
 ```yaml
   - name: 构建开发镜像
-    image: ysicing/drone-plugin-upx
+    image: ysicing/drone-upx
     pull: always
     privileged: true
     settings:
-      registry: ccr.ccs.tencentyun.com
-      repo: ccr.ccs.tencentyun.com/ysicing/drone-plugin-builder
-      debug: true
-      mode: dev
-      tags: develop
-      purge: false
-      no_cache: false
-      dockerfile: Dockerfile
-
+      level: 9 # default 
+      path: ./dist # 必填参数
+      include: linux # 多文件文件名包含
+      exclude: windows # 多文件文件名排除
 ```
+
+> 如果为文件夹时，最好设置include或exclude

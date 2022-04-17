@@ -18,6 +18,7 @@ type (
 		Path    string
 		Include string
 		Exclude string
+		Debug   bool
 	}
 )
 
@@ -36,18 +37,25 @@ func (p Plugin) Exec() error {
 		p.Level = 9
 	}
 	var cmds []*exec.Cmd
+	level := fmt.Sprintf("-%d", p.Level)
 	if file.IsDir(p.Path) {
 		// dir compress
 		files, err := file.DirFilesList(p.Path, p.Include, p.Exclude)
 		if err != nil {
 			return err
 		}
-		for _, file := range files {
-			cmds = append(cmds, exec.Command("/usr/bin/upx", "-q", "-9", "-f", file))
+		for _, f := range files {
+			if file.IsBinary(f) {
+				cmds = append(cmds, exec.Command("/usr/bin/upx", "-q", level, "-f", f))
+			}
 		}
 	} else {
 		// file compress
-		cmds = append(cmds, exec.Command("/usr/bin/upx", "-q", "-9", "-f", p.Path))
+		if file.IsBinary(p.Path) {
+			cmds = append(cmds, exec.Command("/usr/bin/upx", "-q", level, "-f", p.Path))
+		} else {
+			return fmt.Errorf("%s is not a binary file", p.Path)
+		}
 	}
 	for _, cmd := range cmds {
 		cmd.Stdout = os.Stdout
@@ -56,13 +64,14 @@ func (p Plugin) Exec() error {
 		if err := cmd.Run(); err != nil {
 			return err
 		}
+		logrus.Infof("run [%s] compress success", strings.Join(cmd.Args, " "))
 	}
 	return nil
 }
 
 // helper function to create the docker info command.
 func commandInfo() *exec.Cmd {
-	return exec.Command("/usr/bin/upx", "info")
+	return exec.Command("/usr/bin/upx", "-V")
 }
 
 // trace writes each command to stdout with the command wrapped in an xml
