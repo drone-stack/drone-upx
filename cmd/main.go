@@ -13,10 +13,26 @@ var (
 	version = "0.0.1"
 )
 
+type formatter struct{}
+
+func (*formatter) Format(entry *logrus.Entry) ([]byte, error) {
+	return []byte(entry.Message), nil
+}
+
+func init() {
+	// logrus.SetFormatter(&logrus.TextFormatter{
+	// 	DisableTimestamp: true,
+	// 	DisableColors:    true,
+	// })
+	logrus.SetFormatter(new(formatter))
+	logrus.SetOutput(os.Stdout)
+	logrus.SetLevel(logrus.InfoLevel)
+}
+
 func main() {
 	// Load env-file if it exists first
 	if env := os.Getenv("PLUGIN_ENV_FILE"); env != "" {
-		godotenv.Load(env)
+		_ = godotenv.Load(env)
 	}
 
 	app := cli.NewApp()
@@ -64,6 +80,10 @@ func run(c *cli.Context) error {
 		Include: c.String("include"),
 		Exclude: c.String("exclude"),
 		Debug:   c.Bool("debug"),
+	}
+
+	if plugin.Debug {
+		logrus.SetLevel(logrus.DebugLevel)
 	}
 
 	if err := plugin.Exec(); err != nil {

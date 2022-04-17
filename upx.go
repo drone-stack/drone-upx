@@ -25,6 +25,8 @@ type (
 // Exec executes the plugin step
 func (p Plugin) Exec() error {
 	cmd := commandInfo()
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		logrus.Errorf("error running upx info command: %s", err)
 		return err
@@ -37,14 +39,19 @@ func (p Plugin) Exec() error {
 		p.Level = 9
 	}
 	var cmds []*exec.Cmd
+	p.Path = strings.TrimSuffix(p.Path, "/")
 	level := fmt.Sprintf("-%d", p.Level)
-	if file.IsDir(p.Path) {
+	isdir := file.IsDir(p.Path)
+	logrus.Debugf("path: %s, dir: %v", p.Path, isdir)
+	if isdir {
 		// dir compress
 		files, err := file.DirFilesList(p.Path, p.Include, p.Exclude)
 		if err != nil {
 			return err
 		}
+		logrus.Debugf("path: %s, include: %s, exclude: %s, files: %v", p.Path, p.Include, p.Exclude, files)
 		for _, f := range files {
+			f = fmt.Sprintf("%s/%s", p.Path, f)
 			if file.IsBinary(f) {
 				cmds = append(cmds, exec.Command("/usr/bin/upx", "-q", level, "-f", f))
 			}
